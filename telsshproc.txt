@@ -1,0 +1,275 @@
+R1
+
+int fa0/0
+ ip add 172.16.12.1 255.255.255.252
+ no shut
+ exit
+int fa2/0
+ ip add 172.16.13.1 255.255.255.252
+ no shut
+ exit
+int l0
+ ip add 1.1.1.1 255.255.255.255
+ exit
+
+
+R2
+
+int fa0/0
+ ip add 172.16.12.2 255.255.255.252
+ no shut
+ exit
+int fa1/0
+ ip add 172.16.23.1 255.255.255.252
+ no shut
+ exit
+int l0
+ ip add 2.2.2.2 255.255.255.255
+ exit
+
+
+R3
+
+int fa2/0
+ ip add 172.16.13.2 255.255.255.252
+ no shut
+ exit
+int fa1/0
+ ip add 172.16.23.2 255.255.255.252
+ no shut
+ exit
+int l0
+ ip add 3.3.3.3 255.255.255.255
+ exit
+
+
+-----
+
+
+
+enable ssh and telnet in cisco ios devices
+-------------------------------------------------
+
+R1(config)#ip domain-name jk.com
+R1(config)#crypto key generate rsa 
+The name for the keys will be: R1.jk.com
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 2048
+
+
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input telnet ssh
+!
+username cisco password cisco
+
+=---------------
+
+attempt ssh login
+
+
+
+R1#ssh cisco@1.1.1.1
+% No user specified nor available for SSH client
+
+config
+crypto key generate rsa
+
+R1#show crypto key mypubkey rsa
+% Key pair was generated at: 00:26:58 UTC Mar 1 2002
+Key name: R1.jk.com
+ Usage: General Purpose Key
+ Key is not exportable.
+ Key Data:
+  30820122 300D0609 2A864886 F70D0101 01050003 82010F00 3082010A 02820101 
+  00BD0599 BC5EF7F9 FA176382 6C0A6FE6 420A15B5 24247593 07012F1E 1DE9EF93 
+  53FD8C29 E5891255 A6F58DC8 BEF9C280 3A2E17D3 62F36961 ADC2213C A9A87365 
+  72094BD5 ACE5ECBC 67C438D8 8CED53F8 DBF658EA 93744C06 58310294 1822267A 
+  46516475 EAE72FA5 ABE7090B 9D7BB778 AC6E8A38 5DC76BC3 8C30BEA4 7188648A 
+  5D977DD6 E8FFD3E2 83BCE7E6 61A7C14E 9EC4B90F 658A24B0 4F730CEE B90901F0 
+  D47515CE D2B53E33 D624B27D 8AAE9B17 1ED7E061 B236BB35 EC7B691F F0A7501B 
+  DFB659F4 F4FCF507 9035521B 5B53507C 588F9E1F 97C9D3C1 86293848 F65E63F0 
+  0E02D7B0 FBF05F0B DB54E849 E8BC519A 3EC42B8E 911B66C0 38F4A36F 46C5CBEC 
+  EF020301 0001
+% Key pair was generated at: 00:26:58 UTC Mar 1 2002
+Key name: R1.jk.com.server
+ Usage: Encryption Key
+ Key is not exportable.
+ Key Data:
+  307C300D 06092A86 4886F70D 01010105 00036B00 30680261 00B5AE9A FB5243B1 
+  167362DF 563CBBDA 3AC89E9B 31F85F6D C715D911 00C11ACB 7088BECD 3E8976A2 
+  F96D36C3 67C10F97 1EA2FA90 829ACE9A FC4703E4 85E04C0A 86A42A59 809FF88A 
+  29EC6659 6AB7271E 2821E761 63CB4328 213A72CC 8BA00C11 9B020301 0001
+R1#                             
+R1#
+R1#ssh -l cisco 1.1.1.1   
+
+Password: 
+
+R1>
+R1>en
+% No password set
+
+
+
+add enable password
+
+R1(config)#enable password cisco
+
+1#ssh -l cisco 1.1.1.1
+
+Password: 
+
+R1>en
+Password: 
+R1#exit
+
+[Connection to 1.1.1.1 closed by foreign host]
+R1#
+
+
+When I tried ssh from linux machine
+
+ssh is not working
+
+root@ubuntu:/home/projects/anbox# ssh cisco@192.168.122.11
+Unable to negotiate with 192.168.122.11 port 22: no matching key exchange method found. Their offer: diffie-hellman-group1-sha1
+
+
+Telnet worked fine
+
+root@ubuntu:/home/projects/anbox# telnet 192.168.122.11
+Trying 192.168.122.11...
+Connected to 192.168.122.11.
+Escape character is '^]'.
+
+
+User Access Verification
+
+Username: cisco
+Password: 
+R1>en
+Password: 
+R1#
+R1#
+R1#exit
+Connection closed by foreign host.
+root@ubuntu:/home/projects/anbox# 
+
+Troubleshoot ssh not working from linux machine to router
+
+
+what did not work for me:
+
+>>>>>>>>
+root@ubuntu:/home/projects/anbox# ssh cisco@192.168.122.11
+Unable to negotiate with 192.168.122.11 port 22: no matching key exchange method found. Their offer: diffie-hellman-group1-sha1
+
+>>>>>>>>
+root@ubuntu:/home/projects/anbox# ssh -o KexAlgorithms=diffie-hellman-group1-sha1 cisco@192.168.122.11
+Unable to negotiate with 192.168.122.11 port 22: no matching cipher found. Their offer: aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+
+>>>>>>>>
+root@ubuntu:/home/projects/anbox# vim ~/.ssh/config
+added below 2 lines
+
+Host 192.168.122.11
+  KexAlgorithms +diffie-hellman-group1-sha1
+
+
+>>>>>>>>
+root@ubuntu:/home/projects/anbox# ssh cisco@192.168.122.11
+Unable to negotiate with 192.168.122.11 port 22: no matching cipher found. Their offer: aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+
+>>>>>>>>
+root@ubuntu:/home/projects/anbox# ssh -Q cipher
+3des-cbc
+aes128-cbc
+aes192-cbc
+aes256-cbc
+rijndael-cbc@lysator.liu.se
+aes128-ctr
+aes192-ctr
+aes256-ctr
+
+
+Finally what worked for me:
+
+>>>>>>>>>
+root@ubuntu:/home/projects/anbox# vim /etc/ssh/ssh_config
+
+uncommented below line:
+
+    Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc
+
+:wq!
+
+
+root@ubuntu:/home/projects/anbox# ssh cisco@192.168.122.11
+The authenticity of host '192.168.122.11 (192.168.122.11)' can't be established.
+RSA key fingerprint is SHA256:xpHVPqxpNj58SSWHlJ4tifoSQDMtvb54B16/gFObGV4.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.122.11' (RSA) to the list of known hosts.
+cisco@192.168.122.11's password: 
+
+R1>en
+Password: 
+R1#
+
+
+How to troubleshoot file trnasfer permission denied
+
+k@ubuntu:/home/projects$ cp /home/jk/Desktop/telnet\ ssh\ setop\ routes.odt /home/projects/
+cp: cannot create regular file '/home/projects/telnet ssh setop routes.odt': Permission denied
+jk@ubuntu:/home/projects$ sudo cp /home/jk/Desktop/telnet\ ssh\ setop\ routes.odt /home/projects/
+[sudo] password for jk: 
+jk@ubuntu:/home/projects$ 
+
+
+-----------
+
+troubleshoot ssh from ubuntu
+
+root@ubuntu:/home/projects# ssh cisco@192.168.122.11
+ssh_dispatch_run_fatal: Connection to 192.168.122.11 port 22: Invalid key length
+root@ubuntu:/home/projects# ssh cisco@192.168.122.11
+ssh_dispatch_run_fatal: Connection to 192.168.122.11 port 22: Invalid key length
+root@ubuntu:/home/projects# 
+root@ubuntu:/home/projects# ssh cisco@192.168.122.11
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the RSA key sent by the remote host is
+SHA256:fegXgu3ZqD2/jXg/CiGL+cmgvO3IkCmM3wAhcdklCx0.
+Please contact your system administrator.
+Add correct host key in /root/.ssh/known_hosts to get rid of this message.
+Offending RSA key in /root/.ssh/known_hosts:11
+  remove with:
+  ssh-keygen -f "/root/.ssh/known_hosts" -R "192.168.122.11"
+RSA host key for 192.168.122.11 has changed and you have requested strict checking.
+Host key verification failed.
+root@ubuntu:/home/projects# ssh-keygen -f "/root/.ssh/known_hosts" -R "192.168.122.11"
+# Host 192.168.122.11 found: line 11
+/root/.ssh/known_hosts updated.
+Original contents retained as /root/.ssh/known_hosts.old
+root@ubuntu:/home/projects# sudo ssh-keygen -f "/root/.ssh/known_hosts" -R "192.168.122.11"
+Host 192.168.122.11 not found in /root/.ssh/known_hosts
+root@ubuntu:/home/projects# 
+root@ubuntu:/home/projects# ssh cisco@192.168.122.11
+The authenticity of host '192.168.122.11 (192.168.122.11)' can't be established.
+RSA key fingerprint is SHA256:fegXgu3ZqD2/jXg/CiGL+cmgvO3IkCmM3wAhcdklCx0.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.122.11' (RSA) to the list of known hosts.
+cisco@192.168.122.11's password: 
+
+R1>en 
+Password: 
+R1#
+R1#
